@@ -17,7 +17,7 @@ import os
 
 # =================== ТОКЕНЫ И ID ===================
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 MAIN_USER_ID = 1398908364      # Матвей
 SECOND_USER_ID = 1324090906    # Ангелина 
 START_DATE = date(2025, 10, 23)
