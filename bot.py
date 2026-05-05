@@ -30,8 +30,6 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
 # =================== GOOGLE GEMINI ===================
-google_client = genai.Client(api_key=GOOGLE_AI_KEY)
-
 SYSTEM_PROMPT = """
 Ты — романтичный и заботливый помощник для пары Матвея и Ангелины.
 Твоя задача — помогать им выражать чувства, генерировать нежные и персонализированные комплименты и предлагать идеи для совместного досуга.
