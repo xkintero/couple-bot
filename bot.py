@@ -41,7 +41,7 @@ SYSTEM_PROMPT = """
 async def ask_gemini(prompt: str) -> str:
     try:
         response = await google_client.aio.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=f"{SYSTEM_PROMPT}\n\nПользователь просит: {prompt}",
         )
         return response.text
