@@ -36,8 +36,9 @@ SYSTEM_PROMPT = """
 """
 
 async def ask_gemini(prompt: str) -> str:
-    """Отправляет запрос к OpenRouter (модель Gemini 2.0 Flash) и возвращает ответ."""
+    """Отправляет запрос к OpenRouter и возвращает ответ."""
     try:
+        print(f"[ASK_GEMINI] Старт запроса, ключ задан: {bool(OPENROUTER_API_KEY)}")
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json"
@@ -51,17 +52,17 @@ async def ask_gemini(prompt: str) -> str:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as resp:
+                print(f"[ASK_GEMINI] Статус ответа: {resp.status}")
                 if resp.status == 200:
                     data = await resp.json()
                     return data["choices"][0]["message"]["content"]
                 else:
                     error_text = await resp.text()
-                    print(f"OpenRouter error {resp.status}: {error_text}")
+                    print(f"[ASK_GEMINI] Ошибка OpenRouter: {resp.status} - {error_text}")
                     return ""
     except Exception as e:
-        print(f"Ошибка OpenRouter: {e}")
+        print(f"[ASK_GEMINI] Исключение: {e}")
         return ""
-
 # =================== ГЕОКОДИРОВАНИЕ ===================
 async def geocode(place_name: str) -> tuple[float, float] | None:
     try:
