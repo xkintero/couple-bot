@@ -13,7 +13,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
-from google import genai
 import os
 
 # =================== ТОКЕНЫ И ID ===================
