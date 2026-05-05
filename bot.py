@@ -14,6 +14,10 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # =================== ТОКЕНЫ И ID ===================
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
@@ -39,7 +43,7 @@ SYSTEM_PROMPT = """
 async def ask_gemini(prompt: str) -> str:
     """Отправляет запрос к OpenRouter и возвращает ответ."""
     try:
-        print(f"[ASK_GEMINI] Старт запроса, ключ задан: {bool(OPENROUTER_API_KEY)}")
+        logger.info(f"[ASK_GEMINI] Старт запроса, ключ задан: {bool(OPENROUTER_API_KEY)}")
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json"
@@ -53,16 +57,16 @@ async def ask_gemini(prompt: str) -> str:
         }
         async with aiohttp.ClientSession() as session:
             async with session.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as resp:
-                print(f"[ASK_GEMINI] Статус ответа: {resp.status}")
+                logger.info(f"[ASK_GEMINI] Статус ответа: {resp.status}")
                 if resp.status == 200:
                     data = await resp.json()
                     return data["choices"][0]["message"]["content"]
                 else:
                     error_text = await resp.text()
-                    print(f"[ASK_GEMINI] Ошибка OpenRouter: {resp.status} - {error_text}")
+                    logger.error(f"[ASK_GEMINI] Ошибка OpenRouter: {resp.status} - {error_text}")
                     return ""
     except Exception as e:
-        print(f"[ASK_GEMINI] Исключение: {e}")
+        logger.error(f"[ASK_GEMINI] Исключение: {e}")
         return ""
 
 # =================== ГЕОКОДИРОВАНИЕ ===================
@@ -78,7 +82,7 @@ async def geocode(place_name: str) -> tuple[float, float] | None:
                         return float(data[0]["lat"]), float(data[0]["lon"])
         return None
     except Exception as e:
-        print(f"Ошибка геокодирования: {e}")
+        logger.error(f"Ошибка геокодирования: {e}")
         return None
 
 # =================== FSM ===================
@@ -231,9 +235,9 @@ async def generate_places(callback: CallbackQuery, state: FSMContext):
         "Названия должны быть точными, чтобы их можно было найти на карте Минска."
     )
     response = await ask_gemini(prompt)
-    print(f"[GENERATE] Ответ от ask_gemini: '{response[:200] if response else 'ПУСТО'}'")
+    logger.info(f"[GENERATE] Ответ от ask_gemini: '{response[:200] if response else 'ПУСТО'}'")
     if not response:
-        print("[GENERATE] Пустой ответ от ИИ")
+        logger.info("[GENERATE] Пустой ответ от ИИ")
         await callback.message.edit_text("Не удалось сгенерировать места. Попробуй ещё раз.", reply_markup=want_menu_kb())
         await callback.answer("Ошибка генерации", show_alert=True)
         return
@@ -354,7 +358,7 @@ async def back_to_main(callback: CallbackQuery, state: FSMContext):
 async def on_startup(bot: Bot):
     if WEBHOOK_URL:
         await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-        print(f"Webhook set to {WEBHOOK_URL}/webhook")
+        logger.info(f"Webhook set to {WEBHOOK_URL}/webhook")
 
 async def on_shutdown(bot: Bot):
     await bot.delete_webhook()
@@ -372,7 +376,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
-    print(f"Server started on port {PORT}")
+    logger.info(f"Server started on port {PORT}")
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
