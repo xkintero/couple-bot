@@ -20,7 +20,7 @@ import os
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
 GOOGLE_AI_KEY = "AIzaSyAq_biXq4-wdYkZO84hN4R_OOtXOMpr9_U"
 MAIN_USER_ID = 1398908364      # Матвей
-SECOND_USER_ID = 6999577062    # Ангелина (второй аккаунт)
+SECOND_USER_ID = 1324090906    # Ангелина 
 START_DATE = date(2025, 10, 23)
 
 PORT = int(os.environ.get("PORT", 8080))
