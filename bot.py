@@ -18,7 +18,7 @@ import os
 
 # =================== ТОКЕНЫ И ID ===================
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
-GOOGLE_AI_KEY = "AIzaSyAq_biXq4-wdYkZO84hN4R_OOtXOMpr9_U"
+OPENROUTER_API_KEY = "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"
 MAIN_USER_ID = 1398908364      # Матвей
 SECOND_USER_ID = 1324090906    # Ангелина 
 START_DATE = date(2025, 10, 23)
@@ -39,14 +39,30 @@ SYSTEM_PROMPT = """
 """
 
 async def ask_gemini(prompt: str) -> str:
+    """Отправляет запрос к OpenRouter (модель Gemini 2.0 Flash) и возвращает ответ."""
     try:
-        response = await google_client.aio.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=f"{SYSTEM_PROMPT}\n\nПользователь просит: {prompt}",
-        )
-        return response.text
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "google/gemini-2.0-flash-001",
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data["choices"][0]["message"]["content"]
+                else:
+                    error_text = await resp.text()
+                    print(f"OpenRouter error {resp.status}: {error_text}")
+                    return ""
     except Exception as e:
-        print(f"Ошибка Gemini: {e}")
+        print(f"Ошибка OpenRouter: {e}")
         return ""
 
 # =================== ГЕОКОДИРОВАНИЕ ===================
