@@ -19,7 +19,7 @@ import os
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 MAIN_USER_ID = 1398908364      # Матвей
-SECOND_USER_ID = 1324090906    # Ангелина 
+SECOND_USER_ID = 1324090906    # Ангелина
 START_DATE = date(2025, 10, 23)
 
 PORT = int(os.environ.get("PORT", 8080))
@@ -28,13 +28,14 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# =================== GOOGLE GEMINI ===================
+# =================== SYSTEM PROMPT ===================
 SYSTEM_PROMPT = """
 Ты — романтичный и заботливый помощник для пары Матвея и Ангелины.
 Твоя задача — помогать им выражать чувства, генерировать нежные и персонализированные комплименты и предлагать идеи для совместного досуга.
 Будь креативным, но всегда очень вежливым и любящим.
 """
 
+# =================== ИИ ЧЕРЕЗ OPENROUTER ===================
 async def ask_gemini(prompt: str) -> str:
     """Отправляет запрос к OpenRouter и возвращает ответ."""
     try:
@@ -63,6 +64,7 @@ async def ask_gemini(prompt: str) -> str:
     except Exception as e:
         print(f"[ASK_GEMINI] Исключение: {e}")
         return ""
+
 # =================== ГЕОКОДИРОВАНИЕ ===================
 async def geocode(place_name: str) -> tuple[float, float] | None:
     try:
@@ -229,7 +231,9 @@ async def generate_places(callback: CallbackQuery, state: FSMContext):
         "Названия должны быть точными, чтобы их можно было найти на карте Минска."
     )
     response = await ask_gemini(prompt)
+    print(f"[GENERATE] Ответ от ask_gemini: '{response[:200] if response else 'ПУСТО'}'")
     if not response:
+        print("[GENERATE] Пустой ответ от ИИ")
         await callback.message.edit_text("Не удалось сгенерировать места. Попробуй ещё раз.", reply_markup=want_menu_kb())
         await callback.answer("Ошибка генерации", show_alert=True)
         return
