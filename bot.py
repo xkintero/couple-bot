@@ -13,6 +13,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
+from google import genai
 import os
 import logging
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # =================== ТОКЕНЫ И ID ===================
 TOKEN = "8561099909:AAGfrKVJ0QftjvGgx0kalGoV15zRYtYSnaw"
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+GOOGLE_AI_KEY = os.environ.get("GOOGLE_AI_KEY", "")
 MAIN_USER_ID = 1398908364      # Матвей
 SECOND_USER_ID = 1324090906    # Ангелина
 START_DATE = date(2025, 10, 23)
@@ -32,6 +33,9 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
+# Создаём клиент Gemini (ключ уже из переменной окружения)
+google_client = genai.Client(api_key=GOOGLE_AI_KEY)
+
 # =================== SYSTEM PROMPT ===================
 SYSTEM_PROMPT = """
 Ты — романтичный и заботливый помощник для пары Матвея и Ангелины.
@@ -39,34 +43,18 @@ SYSTEM_PROMPT = """
 Будь креативным, но всегда очень вежливым и любящим.
 """
 
-# =================== ИИ ЧЕРЕЗ OPENROUTER ===================
+# =================== ИИ ===================
 async def ask_gemini(prompt: str) -> str:
-    """Отправляет запрос к OpenRouter и возвращает ответ."""
     try:
-        logger.info(f"[ASK_GEMINI] Старт запроса, ключ задан: {bool(OPENROUTER_API_KEY)}")
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "google/gemini-2.0-flash-001",
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ]
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as resp:
-                logger.info(f"[ASK_GEMINI] Статус ответа: {resp.status}")
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data["choices"][0]["message"]["content"]
-                else:
-                    error_text = await resp.text()
-                    logger.error(f"[ASK_GEMINI] Ошибка OpenRouter: {resp.status} - {error_text}")
-                    return ""
+        logger.info("[GEMINI] Отправка запроса...")
+        response = await google_client.aio.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"{SYSTEM_PROMPT}\n\nПользователь просит: {prompt}",
+        )
+        logger.info(f"[GEMINI] Ответ получен: {response.text[:100] if response else 'Нет текста'}")
+        return response.text
     except Exception as e:
-        logger.error(f"[ASK_GEMINI] Исключение: {e}")
+        logger.error(f"Ошибка Gemini: {e}")
         return ""
 
 # =================== ГЕОКОДИРОВАНИЕ ===================
@@ -235,7 +223,7 @@ async def generate_places(callback: CallbackQuery, state: FSMContext):
         "Названия должны быть точными, чтобы их можно было найти на карте Минска."
     )
     response = await ask_gemini(prompt)
-    logger.info(f"[GENERATE] Ответ от ask_gemini: '{response[:200] if response else 'ПУСТО'}'")
+    logger.info(f"[GENERATE] Ответ от Gemini: '{response[:200] if response else 'ПУСТО'}'")
     if not response:
         logger.info("[GENERATE] Пустой ответ от ИИ")
         await callback.message.edit_text("Не удалось сгенерировать места. Попробуй ещё раз.", reply_markup=want_menu_kb())
